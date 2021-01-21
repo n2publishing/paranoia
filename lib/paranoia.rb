@@ -86,6 +86,19 @@ module Paranoia
     super || @_trigger_destroy_callback && paranoia_destroyed?
   end
 
+  def transaction_include_any_action?(actions)
+    actions.any? do |action|
+      case action
+      when :create
+        persisted? && @_new_record_before_last_commit
+      when :update
+        !(@_new_record_before_last_commit || destroyed? || paranoia_destroyed?) && _trigger_update_callback
+      when :destroy
+        _trigger_destroy_callback
+      end
+    end
+  end
+
   def paranoia_delete
     raise ActiveRecord::ReadOnlyRecord, "#{self.class} is marked as readonly" if readonly?
     if persisted?
